@@ -282,7 +282,7 @@ function initClickThrough() {
 
 // ── Focus navigation ──
 // Focuses the note at the given index in the `notes` array (creation order).
-function focusNote(index) {
+function focusNote(index, juice) {
   const n = notes[index];
   if (!n) return;
   const el = board.querySelector(`[data-id="${n.id}"]`);
@@ -292,6 +292,13 @@ function focusNote(index) {
     ta.focus();
     const len = ta.value.length;
     ta.setSelectionRange(len, len);
+  }
+  if (juice) {
+    SFX.focus();
+    spawnRipple(el, colorVal(n.color));
+    el.classList.remove('focusPulse');
+    void el.offsetWidth; // restart animation
+    el.classList.add('focusPulse');
   }
   return el;
 }
@@ -319,7 +326,7 @@ document.addEventListener('keydown', (e) => {
     const dir = e.shiftKey ? -1 : 1;
     let i = focusedNoteIndex();
     if (i === -1) i = dir === 1 ? -1 : 0; // start from first/last when nothing focused
-    focusNote((i + dir + notes.length) % notes.length);
+    focusNote((i + dir + notes.length) % notes.length, true);
   }
   if (e.key === 'q' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
