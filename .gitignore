@@ -1,0 +1,17 @@
+# Rust / Tauri build outputs
+/src-tauri/target/
+/src-tauri/gen/
+
+# Node
+node_modules/
+
+# Diagnostics
+debug_dump.txt
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
