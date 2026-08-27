@@ -148,9 +148,19 @@ function deleteNote(id, el) {
       if (appWin) appWin.close();
       else window.close();
     }, 350);
-  } else {
-    el.addEventListener('animationend', () => el.remove());
+    return;
   }
+  // Focus the note that came before the deleted one, so Ctrl+W chains.
+  const prev = el.previousElementSibling;
+  if (prev && prev.classList.contains('note')) {
+    const ta = prev.querySelector('textarea');
+    if (ta) {
+      ta.focus();
+      const len = ta.value.length;
+      ta.setSelectionRange(len, len);
+    }
+  }
+  el.addEventListener('animationend', () => el.remove());
 }
 
 // ── Save ──
