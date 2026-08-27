@@ -23,7 +23,8 @@ of notes, so it feels like floating notes, not a blocking window.
 - **Drag** notes from anywhere on the note; auto-resizing textarea.
 - **Juice** – spawn/delete animations, particles, ripples, and Web Audio synth
   sounds (type, pop, delete, click, color).
-- **Persistence** – notes are saved to `localStorage`.
+- **Persistence** – notes are saved to `localStorage` as an **event log**
+  (event sourcing), so undo/redo survive an app restart.
 
 ### Hotkeys
 
@@ -31,10 +32,29 @@ of notes, so it feels like floating notes, not a blocking window.
 |------|--------|
 | `Ctrl+N` | New note |
 | `Ctrl+W` | Delete the note in focus |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` / `Ctrl+Y` | Redo |
 | `Ctrl+Q` | Close the app |
 
-Closing the last note closes the app. The app always opens with at least one
-empty, focused note ready to type.
+Closing the last real note closes the app. The app always opens with at least
+one empty, focused note ready to type (the *anchor*).
+
+### Undo / redo, and the "anchor" note
+
+The app uses an append-only event log: every action is recorded, and the
+current state is derived by replaying the log up to an undo pointer. Undo moves
+the pointer back; redo moves it forward.
+
+- **Undo/redo persist across restarts** – history is saved with the state, so
+  if you delete notes, the app closes, and you reopen, `Ctrl+Z` can bring them
+  all back.
+- **`Ctrl+Z` never closes the app.** The moment undo would drop you to zero
+  notes, a fresh blank note (the anchor) is created instead.
+- The **anchor** is the blank note shown on open. It sits *outside* the
+  history until you type into it — only then does it become a real note and
+  join the undoable log.
+- Deleting the anchor never locks you out: if there's history to recover, it
+  restores the next note instead of closing.
 
 ## Requirements
 
@@ -73,8 +93,8 @@ Tauri app with hot-reload for Rust changes.
 npm test
 ```
 
-Runs the focus-navigation regression tests (pure logic, Node's built-in
-`assert` — no test framework).
+Runs the regression tests for the focus-navigation logic and the event-sourced
+store (pure logic, Node's built-in `assert` — no test framework).
 
 ## Building the executable
 
@@ -101,9 +121,12 @@ You can copy that single `.exe` anywhere and run it — no install needed.
 ```
 src/            Frontend (plain HTML/CSS/JS, no framework, no bundler)
 src/index.html
-src/main.js     Notes, CRUD, click-through logic
+src/main.js     Notes, CRUD, navigation, anchor & click-through logic
+src/store.js    Event-sourced store (undo/redo, snapshot/restore)
+src/nav-logic.js Pure focus-navigation helpers
 src/style.css
 src/sounds.js   Web Audio synth effects
+tests/          Node built-in `assert` tests (store + nav-logic)
 src-tauri/      Tauri/Rust backend
 src-tauri/src/
   lib.rs        App setup: cursor poll + window sizing
