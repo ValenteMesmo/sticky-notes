@@ -118,13 +118,28 @@ function colorVal(c) {
   return map[c] || map.yellow;
 }
 
+// Picks a spot against the screen edges/corners, with slight jitter so new
+// notes hug the borders instead of clustering in the middle.
+function edgePosition() {
+  const W = window.innerWidth, H = window.innerHeight;
+  const side = Math.floor(Math.random() * 4); // 0 TL, 1 TR, 2 BL, 3 BR
+  const jitter = () => Math.random() * 120;
+  switch (side) {
+    case 0: return { x: 20 + jitter(), y: 20 + jitter() };
+    case 1: return { x: W - 260 + jitter() * -1, y: 20 + jitter() };
+    case 2: return { x: 20 + jitter(), y: H - 220 + jitter() * -1 };
+    default: return { x: W - 260 + jitter() * -1, y: H - 220 + jitter() * -1 };
+  }
+}
+
 // ── Add note ──
 function addNote(x, y) {
+  const pos = (x === undefined || y === undefined) ? edgePosition() : { x, y };
   const note = {
     id: nextId++,
     color: COLORS[Math.floor(Math.random() * 5)],
-    x: x !== undefined ? x : 60 + Math.random() * 300,
-    y: y !== undefined ? y : 60 + Math.random() * 200,
+    x: pos.x,
+    y: pos.y,
     w: 220,
     text: ''
   };
@@ -328,7 +343,7 @@ function focusedNoteIndex() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
-    addNote(60 + Math.random() * 300, 60 + Math.random() * 200);
+    addNote(); // hug the screen edges
   }
   if (e.key === 'w' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
