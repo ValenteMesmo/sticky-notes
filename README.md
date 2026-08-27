@@ -38,10 +38,24 @@ empty, focused note ready to type.
 
 ## Requirements
 
-- [Rust](https://rustup.rs) toolchain (edition 2021)
-- [Node.js](https://nodejs.org) (v20+ recommended) and npm
-- System dependencies for [Tauri v2](https://tauri.app/start/prerequisites/)
-  (Windows: WebView2, MSVC build tools)
+First-time setup on a fresh machine needs all of these installed **before**
+running `npm run build`:
+
+- [Rust](https://rustup.rs) toolchain — on Windows, install via
+  [rustup](https://rustup.rs) and ensure `cargo`/`rustc` are on your `PATH`
+  (the `cargo metadata ... program not found` error means Rust is missing).
+- [Node.js](https://nodejs.org) (v20+ recommended) and npm.
+- System dependencies for [Tauri v2](https://tauri.app/start/prerequisites/):
+  on Windows, **WebView2** (preinstalled on Windows 11 / recent Windows 10) and
+  the **Microsoft C++ Build Tools** (the MSVC linker). Rust must be configured
+  to use the MSVC toolchain (`stable-x86_64-pc-windows-msvc`).
+
+To verify Rust is ready before building:
+
+```bash
+cargo --version   # must print a version, e.g. "cargo 1.97.0"
+rustc --version   # must print a version
+```
 
 ## Development
 
@@ -59,15 +73,19 @@ Tauri app with hot-reload for Rust changes.
 npm run build
 ```
 
-This runs `tauri build`, producing a standalone `.exe` (bundler runs
-`npm run build`, so only the system dependencies listed above are required).
-The binary is written to:
+This runs `tauri build`, which compiles the Rust backend (requires the full
+toolchain above) and bundles the frontend into a standalone `.exe`. The binary
+is written to:
 
 ```
 src-tauri/target/release/sticky-notes.exe
 ```
 
 You can copy that single `.exe` anywhere and run it — no install needed.
+
+> **Tip:** if you only want to *run* the app on another machine, build the
+> `.exe` once and copy it over — the target machine does **not** need Rust,
+> Node, or anything else to run the resulting executable.
 
 ## Project layout
 
