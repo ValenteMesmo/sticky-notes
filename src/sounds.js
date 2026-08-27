@@ -35,14 +35,13 @@ const SFX = (() => {
     },
 
     delete() {
-      osc('triangle', 320, 0, 0.2, 0.14);
-      osc('sine', 140, 0.04, 0.3, 0.12);
-      osc('sine', 90, 0.12, 0.35, 0.1);
+      osc('triangle', 480, 0, 0.18, 0.12);
+      osc('sine', 220, 0.04, 0.24, 0.1);
     },
 
     type() {
-      const freq = 500 + Math.random() * 300;
-      osc('triangle', freq, 0, 0.05, 0.03);
+      const freq = 260 + Math.random() * 160;
+      osc('triangle', freq, 0, 0.06, 0.035);
     },
 
     click() {
