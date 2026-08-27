@@ -297,11 +297,22 @@ function doUndo() {
   const after = new Set(store.asArray().map(n => n.id));
   const removed = [...before].filter(id => !after.has(id));
   const added = [...after].filter(id => !before.has(id));
+  // If a card was restored, drop the empty anchor so it doesn't sit in front.
+  if (added.length && anchor) removeAnchor();
   if (removed.length) SFX.delete();           // a card got destroyed
   else if (added.length) SFX.pop();           // a card came back
   else SFX.focus();
   renderAll(new Set(removed));
   save();
+}
+
+// Remove the anchor note from view/state (it lives outside the store).
+function removeAnchor() {
+  if (!anchor) return;
+  if (anchor.el && anchor.el.parentNode) anchor.el.parentNode.removeChild(anchor.el);
+  clearTextTimer(anchor.note.id);
+  anchor = null;
+  syncNotes();
 }
 
 function doRedo() {
@@ -312,6 +323,7 @@ function doRedo() {
   const after = new Set(store.asArray().map(n => n.id));
   const removed = [...before].filter(id => !after.has(id));
   const added = [...after].filter(id => !before.has(id));
+  if (added.length && anchor) removeAnchor();
   if (added.length) SFX.pop();                // a card was restored
   else if (removed.length) SFX.delete();
   else SFX.focus();

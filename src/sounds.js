@@ -12,59 +12,62 @@ const SFX = (() => {
 
   function osc(type, freq, start, dur, gainVal) {
     const c = getCtx();
+    const t = c.currentTime + start;
     const o = c.createOscillator();
     const g = c.createGain();
+    const lp = c.createBiquadFilter(); // lowpass tames the "sharp" high end
     o.type = type;
-    o.frequency.setValueAtTime(freq, c.currentTime + start);
-    g.gain.setValueAtTime(gainVal, c.currentTime + start);
-    g.gain.exponentialRampToValueAtTime(0.001, c.currentTime + start + dur);
-    o.connect(g).connect(c.destination);
-    o.start(c.currentTime + start);
-    o.stop(c.currentTime + start + dur);
+    o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.001, t);
+    g.gain.exponentialRampToValueAtTime(gainVal, t + 0.008);       // soft attack
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);           // tapering tail
+    lp.type = 'lowpass';
+    lp.frequency.value = 1400;
+    o.connect(lp).connect(g).connect(c.destination);
+    o.start(t);
+    o.stop(t + dur + 0.03);
   }
 
   return {
     pop() {
-      osc('sine', 800, 0, 0.15, 0.25);
-      osc('sine', 1200, 0.02, 0.1, 0.15);
-      osc('triangle', 600, 0.04, 0.08, 0.1);
+      osc('sine', 700, 0, 0.22, 0.22);
+      osc('sine', 1000, 0.03, 0.16, 0.12);
     },
 
     delete() {
-      osc('sawtooth', 400, 0, 0.12, 0.12);
-      osc('sawtooth', 200, 0.05, 0.2, 0.1);
-      osc('sine', 150, 0.1, 0.25, 0.08);
+      osc('triangle', 320, 0, 0.2, 0.14);
+      osc('sine', 140, 0.04, 0.3, 0.12);
+      osc('sine', 90, 0.12, 0.35, 0.1);
     },
 
     type() {
-      const freq = 800 + Math.random() * 600;
-      osc('square', freq, 0, 0.03, 0.03);
+      const freq = 500 + Math.random() * 300;
+      osc('triangle', freq, 0, 0.05, 0.03);
     },
 
     click() {
-      osc('sine', 1000, 0, 0.05, 0.08);
-      osc('triangle', 1400, 0.01, 0.04, 0.06);
+      osc('sine', 800, 0, 0.08, 0.07);
     },
 
     focus() {
-      osc('sine', 660, 0, 0.06, 0.12);
-      osc('sine', 990, 0.03, 0.05, 0.08);
+      osc('sine', 550, 0, 0.1, 0.1);
+      osc('sine', 830, 0.04, 0.09, 0.07);
     },
 
     color() {
-      osc('sine', 600, 0, 0.08, 0.12);
-      osc('sine', 900, 0.04, 0.08, 0.1);
-      osc('sine', 1200, 0.08, 0.1, 0.08);
+      osc('sine', 520, 0, 0.12, 0.1);
+      osc('sine', 780, 0.05, 0.12, 0.08);
+      osc('sine', 1040, 0.1, 0.14, 0.06);
     },
 
     minimize() {
-      osc('sine', 500, 0, 0.08, 0.1);
-      osc('sine', 350, 0.04, 0.1, 0.08);
+      osc('sine', 420, 0, 0.12, 0.09);
+      osc('sine', 300, 0.05, 0.14, 0.07);
     },
 
     restore() {
-      osc('sine', 350, 0, 0.08, 0.1);
-      osc('sine', 600, 0.04, 0.1, 0.08);
+      osc('sine', 300, 0, 0.12, 0.09);
+      osc('sine', 550, 0.05, 0.14, 0.07);
     }
   };
 })();
