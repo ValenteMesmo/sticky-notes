@@ -6,67 +6,71 @@ const SFX = (() => {
     return ctx;
   }
 
-  function now() {
-    return getCtx().currentTime;
-  }
-
-  function osc(type, freq, start, dur, gainVal) {
+  // Percussive "thock": a short pitched impact that drops fast (like striking
+  // wood / a thocky keycap), through a closed lowpass so it stays warm, dry and
+  // soft rather than sharp. freq = body resonance, cutoff lowend cream.
+  function thock(t0, freq, dur, gainVal, cutoff) {
     const c = getCtx();
-    const t = c.currentTime + start;
+    const t = c.currentTime + t0;
     const o = c.createOscillator();
     const g = c.createGain();
-    const lp = c.createBiquadFilter(); // lowpass tames the "sharp" high end
-    o.type = type;
-    o.frequency.setValueAtTime(freq, t);
+    const lp = c.createBiquadFilter();
+    o.type = 'sine';
+    // fast pitch drop gives the "knock/thump" body
+    o.frequency.setValueAtTime(freq * 1.6, t);
+    o.frequency.exponentialRampToValueAtTime(freq, t + 0.02);
+    // immediate attack, fast natural decay (percussive), soft tail
     g.gain.setValueAtTime(0.001, t);
-    g.gain.exponentialRampToValueAtTime(gainVal, t + 0.008);       // soft attack
-    g.gain.exponentialRampToValueAtTime(0.001, t + dur);           // tapering tail
+    g.gain.exponentialRampToValueAtTime(gainVal, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     lp.type = 'lowpass';
-    lp.frequency.value = 1400;
+    lp.frequency.value = cutoff;
+    lp.Q.value = 0.8;
     o.connect(lp).connect(g).connect(c.destination);
     o.start(t);
-    o.stop(t + dur + 0.03);
+    o.stop(t + dur + 0.05);
   }
 
   return {
     pop() {
-      osc('sine', 700, 0, 0.22, 0.22);
-      osc('sine', 1000, 0.03, 0.16, 0.12);
+      thock(0, 220, 0.16, 0.2, 900);
+      thock(0.015, 140, 0.18, 0.14, 650);
     },
 
     delete() {
-      osc('triangle', 480, 0, 0.18, 0.12);
-      osc('sine', 220, 0.04, 0.24, 0.1);
+      thock(0, 180, 0.15, 0.18, 800);
+      thock(0.03, 110, 0.2, 0.15, 550);
     },
 
     type() {
-      const freq = 260 + Math.random() * 160;
-      osc('triangle', freq, 0, 0.06, 0.035);
+      // the per-key thock: short, dry, slightly randomized pitch
+      const f = 170 + Math.random() * 130;
+      thock(0, f, 0.05, 0.05, 700);
     },
 
     click() {
-      osc('sine', 800, 0, 0.08, 0.07);
+      thock(0, 300, 0.07, 0.07, 900);
     },
 
     focus() {
-      osc('sine', 550, 0, 0.1, 0.1);
-      osc('sine', 830, 0.04, 0.09, 0.07);
+      thock(0, 300, 0.09, 0.12, 900);
+      thock(0.05, 200, 0.12, 0.09, 700);
     },
 
     color() {
-      osc('sine', 520, 0, 0.12, 0.1);
-      osc('sine', 780, 0.05, 0.12, 0.08);
-      osc('sine', 1040, 0.1, 0.14, 0.06);
+      thock(0, 240, 0.11, 0.13, 850);
+      thock(0.05, 160, 0.12, 0.1, 650);
+      thock(0.1, 120, 0.13, 0.08, 600);
     },
 
     minimize() {
-      osc('sine', 420, 0, 0.12, 0.09);
-      osc('sine', 300, 0.05, 0.14, 0.07);
+      thock(0, 180, 0.12, 0.12, 750);
+      thock(0.04, 120, 0.14, 0.09, 600);
     },
 
     restore() {
-      osc('sine', 300, 0, 0.12, 0.09);
-      osc('sine', 550, 0.05, 0.14, 0.07);
+      thock(0, 200, 0.12, 0.12, 800);
+      thock(0.05, 130, 0.15, 0.1, 620);
     }
   };
 })();
