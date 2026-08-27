@@ -140,6 +140,7 @@ function deleteNote(id, el) {
   SFX.delete();
   spawnParticles(el, '#ef4444');
   el.classList.add('deleting');
+  const idx = notes.findIndex(n => n.id === id);
   notes = notes.filter(n => n.id !== id);
   save();
   // Closing the last note closes the app.
@@ -150,16 +151,9 @@ function deleteNote(id, el) {
     }, 350);
     return;
   }
-  // Focus the note that came before the deleted one, so Ctrl+W chains.
-  const prev = el.previousElementSibling;
-  if (prev && prev.classList.contains('note')) {
-    const ta = prev.querySelector('textarea');
-    if (ta) {
-      ta.focus();
-      const len = ta.value.length;
-      ta.setSelectionRange(len, len);
-    }
-  }
+  // Focus another note so Ctrl+W can keep chaining through all of them:
+  // the note that now occupies the deleted one's spot, or the last one.
+  focusNote(Math.min(idx, notes.length - 1));
   el.addEventListener('animationend', () => el.remove());
 }
 
@@ -286,6 +280,29 @@ function initClickThrough() {
   setIgnore(true);
 }
 
+// ── Focus navigation ──
+// Focuses the note at the given index in the `notes` array (creation order).
+function focusNote(index) {
+  const n = notes[index];
+  if (!n) return;
+  const el = board.querySelector(`[data-id="${n.id}"]`);
+  if (!el) return;
+  const ta = el.querySelector('textarea');
+  if (ta) {
+    ta.focus();
+    const len = ta.value.length;
+    ta.setSelectionRange(len, len);
+  }
+  return el;
+}
+
+// Index (in `notes`) of the note whose textarea currently has focus, or -1.
+function focusedNoteIndex() {
+  const active = document.activeElement?.closest?.('.note');
+  if (!active) return -1;
+  return notes.findIndex(n => n.id === +active.dataset.id);
+}
+
 // ── Keyboard ──
 document.addEventListener('keydown', (e) => {
   if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
@@ -296,6 +313,13 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     const el = document.activeElement?.closest?.('.note');
     if (el) deleteNote(+el.dataset.id, el);
+  }
+  if (e.key === 'Tab' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    const dir = e.shiftKey ? -1 : 1;
+    let i = focusedNoteIndex();
+    if (i === -1) i = dir === 1 ? -1 : 0; // start from first/last when nothing focused
+    focusNote((i + dir + notes.length) % notes.length);
   }
   if (e.key === 'q' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();
