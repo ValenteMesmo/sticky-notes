@@ -13,6 +13,8 @@ const storage = {
 let notes = storage.load();
 let dragging = null;
 let dragOffset = { x: 0, y: 0 };
+let dragStart = { x: 0, y: 0 };
+let dragActivated = false;
 let nextId = notes.reduce((max, n) => Math.max(max, n.id || 0), 0) + 1;
 
 const board = document.getElementById('board');
@@ -48,15 +50,16 @@ function createNoteEl(note) {
     </div>
   `;
 
-  // Drag via header
-  const header = el.querySelector('[data-drag]');
-  header.addEventListener('mousedown', (e) => {
+  // Drag from anywhere on the note (not just the header). A plain click stays
+  // a click (focus/cursor); the note only starts dragging after real movement.
+  el.addEventListener('mousedown', (e) => {
     if (e.target.closest('.note-actions') || e.target.closest('.note-dots')) return;
     dragging = el;
+    dragStart.x = e.clientX;
+    dragStart.y = e.clientY;
     dragOffset.x = e.clientX - el.offsetLeft;
     dragOffset.y = e.clientY - el.offsetTop;
-    el.classList.add('dragging');
-    el.style.zIndex = 1000;
+    dragActivated = false;
   });
 
   // Textarea
@@ -139,6 +142,7 @@ function addNote(x, y) {
 function deleteNote(id, el) {
   SFX.delete();
   spawnParticles(el, '#ef4444');
+  el.classList.remove('focusPulse'); // don't let focus juice override the delete animation
   el.classList.add('deleting');
   const idx = notes.findIndex(n => n.id === id);
   notes = notes.filter(n => n.id !== id);
@@ -153,8 +157,8 @@ function deleteNote(id, el) {
   }
   // Focus another note so Ctrl+W can keep chaining through all of them:
   // the note that now occupies the deleted one's spot, or the last one.
-  focusNote(Math.min(idx, notes.length - 1));
-  el.addEventListener('animationend', () => el.remove());
+  focusNote(nextAfterDelete(idx, notes.length));
+  setTimeout(() => el.remove(), 360); // match noteDelete duration; remove deterministically
 }
 
 // ── Save ──
@@ -208,16 +212,26 @@ function spawnRipple(el, color) {
 // ── Mouse move (drag) ──
 document.addEventListener('mousemove', (e) => {
   if (!dragging) return;
+  if (!dragActivated) {
+    // Don't hijack clicks: only start dragging after real movement.
+    if (Math.abs(e.clientX - dragStart.x) < 4 && Math.abs(e.clientY - dragStart.y) < 4) return;
+    dragActivated = true;
+    dragging.classList.add('dragging');
+    dragging.style.zIndex = 1000;
+  }
   dragging.style.left = (e.clientX - dragOffset.x) + 'px';
   dragging.style.top = (e.clientY - dragOffset.y) + 'px';
 });
 
 document.addEventListener('mouseup', () => {
   if (dragging) {
-    dragging.classList.remove('dragging');
-    dragging.style.zIndex = '';
+    if (dragActivated) {
+      dragging.classList.remove('dragging');
+      dragging.style.zIndex = '';
+      save();
+    }
     dragging = null;
-    save();
+    dragActivated = false;
   }
 });
 
@@ -326,7 +340,7 @@ document.addEventListener('keydown', (e) => {
     const dir = e.shiftKey ? -1 : 1;
     let i = focusedNoteIndex();
     if (i === -1) i = dir === 1 ? -1 : 0; // start from first/last when nothing focused
-    focusNote((i + dir + notes.length) % notes.length, true);
+    focusNote(cycle(i, dir, notes.length), true);
   }
   if (e.key === 'q' && (e.ctrlKey || e.metaKey)) {
     e.preventDefault();

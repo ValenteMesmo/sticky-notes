@@ -20,7 +20,7 @@ of notes, so it feels like floating notes, not a blocking window.
   cursor-position poll).
 - **Always on top**, borderless, transparent, full-screen covering the monitor.
 - **7 note colors** (yellow, pink, blue, green, purple, orange, white).
-- **Drag** notes by their header; auto-resizing textarea.
+- **Drag** notes from anywhere on the note; auto-resizing textarea.
 - **Juice** – spawn/delete animations, particles, ripples, and Web Audio synth
   sounds (type, pop, delete, click, color).
 - **Persistence** – notes are saved to `localStorage`.
@@ -66,6 +66,15 @@ npm run dev
 
 `npm run dev` starts a local static server for the frontend and launches the
 Tauri app with hot-reload for Rust changes.
+
+### Tests
+
+```bash
+npm test
+```
+
+Runs the focus-navigation regression tests (pure logic, Node's built-in
+`assert` — no test framework).
 
 ## Building the executable
 

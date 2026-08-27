@@ -5,7 +5,8 @@
   "scripts": {
     "tauri": "tauri",
     "dev": "tauri dev",
-    "build": "tauri build"
+    "build": "tauri build",
+    "test": "node tests/nav-logic.test.js"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
