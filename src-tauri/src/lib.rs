@@ -1,37 +1,41 @@
 use tauri::Manager;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+fn now_ms() -> u128 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let t0 = now_ms();
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![debug_log])
-        .setup(|app| {
-            eprintln!("[dbg] setup: entered");
-            debug_write("setup: entered");
+        .setup(move |app| {
+            let t_setup = now_ms();
+            eprintln!("[dbg] setup: entered ({t_setup})");
+            debug_write(&format!("T0={t0} setup_entered={t_setup}"));
             // Cover the whole monitor so notes can float anywhere and the
             // transparent/click-through background covers everything behind it.
-            let handle = app.handle().clone();
-            std::thread::spawn(move || {
-                // Wait for the window to be fully created/before resizing.
-                std::thread::sleep(std::time::Duration::from_millis(300));
-                if let Some(win) = handle.get_webview_window("main") {
-                    if let Ok(Some(monitor)) = win.primary_monitor() {
-                        let size = monitor.size();
-                        let pos = monitor.position();
-                        let r1 = win.set_size(*size);
-                        let r2 = win.set_position(*pos);
-                        std::thread::sleep(std::time::Duration::from_millis(300));
-                        let outer = win.outer_size().map(|s| format!("{}x{}", s.width, s.height)).unwrap_or_default();
-                        debug_write(&format!(
-                            "setup: monitor={}x{}@{} set_size={r1:?} set_pos={r2:?} final_outer={outer}",
-                            size.width, size.height, format!("{}", pos.x)
-                        ));
-                    } else {
-                        debug_write("setup: no primary monitor");
-                    }
+            // No sleeps needed: the window already exists by the time `setup`
+            // runs, so just resize it synchronously.
+            if let Some(win) = app.get_webview_window("main") {
+                if let Ok(Some(monitor)) = win.primary_monitor() {
+                    let size = monitor.size();
+                    let pos = monitor.position();
+                    let r1 = win.set_size(*size);
+                    let r2 = win.set_position(*pos);
+                    debug_write(&format!("resized_t={}", now_ms()));
+                    let outer = win.outer_size().map(|s| format!("{}x{}", s.width, s.height)).unwrap_or_default();
+                    debug_write(&format!(
+                        "setup: monitor={}x{}@{} set_size={r1:?} set_pos={r2:?} final_outer={outer}",
+                        size.width, size.height, format!("{}", pos.x)
+                    ));
                 } else {
-                    debug_write("setup: no main webview window");
+                    debug_write("setup: no primary monitor");
                 }
-            });
+            } else {
+                debug_write("setup: no main webview window");
+            }
 
             // Poll the global cursor so the click-through window can toggle
             // mouse capture only when hovering a note.

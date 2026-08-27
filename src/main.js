@@ -258,9 +258,9 @@ function deleteNote(id, el) {
     anchor = null;
     if (el.parentNode) el.parentNode.removeChild(el);
     syncNotes();
-    // Never close if there's history to recover: restore the next note.
-    if (store.canUndo()) doUndo();
-    else closeApp();
+    // Closing the empty anchor always closes the app — like any last note.
+    // Recovery still works on reopen via Ctrl+Z (the history persists).
+    closeApp();
     return;
   }
 
@@ -592,6 +592,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('load', () => {
+  dbg(`fe_load_at=${Date.now()}`); // measure WebView load time vs Rust T0
   dbgTauri();
 
   if (visibleCount() === 0) {
